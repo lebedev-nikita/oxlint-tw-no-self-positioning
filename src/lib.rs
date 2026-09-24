@@ -98,7 +98,7 @@ fn class_group(token: &str) -> Option<u32> {
     if let Some(arbitrary) = base.strip_prefix('[').and_then(|s| s.strip_suffix(']')) {
         return property_group(arbitrary);
     }
-    if matches!(base, "relative" | "absolute" | "fixed" | "sticky") {
+    if matches!(base, "absolute" | "fixed" | "sticky") {
         return Some(POSITION);
     }
     if matches!(
@@ -205,8 +205,10 @@ fn property_group(text: &str) -> Option<u32> {
         .flat_map(char::to_lowercase)
         .collect();
     if property == "position" {
-        return (!value.trim().is_empty() && !value.trim().eq_ignore_ascii_case("static"))
-            .then_some(POSITION);
+        return (!value.trim().is_empty()
+            && !value.trim().eq_ignore_ascii_case("static")
+            && !value.trim().eq_ignore_ascii_case("relative"))
+        .then_some(POSITION);
     }
     if matches!(property.as_str(), "float" | "cssfloat") {
         return (!value.trim().is_empty() && !value.trim().eq_ignore_ascii_case("none"))
@@ -251,7 +253,6 @@ mod tests {
             "ms-auto",
             "mbs-2",
             "absolute",
-            "relative",
             "fixed",
             "sticky",
             "md:float-left",
@@ -268,7 +269,6 @@ mod tests {
             "[margin-top:1px]",
             "hover:[width:50%]",
             "[position:absolute]",
-            "[position:relative]",
             "[float:left]",
             "[inset-inline-start:0]",
         ] {
@@ -293,6 +293,10 @@ mod tests {
             "wobbly",
             "[max-width:4rem]",
             "[position:static]",
+            "relative",
+            "md:hover:!relative",
+            "[position:relative]",
+            "hover:[position:relative]",
             "[float:none]",
             "bg-[url(data:image/svg+xml;a:b)]",
             "before:absolute",
@@ -313,8 +317,8 @@ mod tests {
             "[&:hover]:w-8",
             "[&:not(.compact)]:size-3",
             "[.container_&]:mt-2",
-            "[&:has(svg)]:relative",
             "[&:has(>svg)]:w-4",
+            "[&:has(svg)]:absolute",
             "[&[data-name='a_b']]:w-4",
             "[&_svg,&:hover]:w-4",
         ] {
@@ -333,7 +337,6 @@ mod tests {
             "left:0",
             "insetBlockStart:0",
             "position:absolute",
-            "position:relative",
             "position:fixed",
             "position:sticky",
             "cssFloat:left",
@@ -345,6 +348,8 @@ mod tests {
             "maxWidth:20",
             "min-width:0",
             "position:static",
+            "position:relative",
+            "position: Relative ",
             "float:none",
             "padding:8",
             "transform:translateX(2px)",
@@ -357,7 +362,7 @@ mod tests {
     fn classifies_each_rule_group() {
         for (class, group) in [
             ("mt-2", MARGIN),
-            ("relative", POSITION),
+            ("absolute", POSITION),
             ("left-0", OFFSET),
             ("float-left", FLOAT),
             ("w-80", WIDTH),
@@ -370,7 +375,7 @@ mod tests {
         }
         for (property, group) in [
             ("marginTop:2", MARGIN),
-            ("position:relative", POSITION),
+            ("position:absolute", POSITION),
             ("insetInlineStart:0", OFFSET),
             ("cssFloat:left", FLOAT),
             ("width:80", WIDTH),
