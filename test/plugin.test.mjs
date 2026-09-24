@@ -20,8 +20,9 @@ function lint(source, rules = plugin.recommended.rules, configFile = config) {
   }
   const file = join(directory, 'example.tsx');
   writeFileSync(file, source);
-  const result = spawnSync(join(root, 'node_modules', '.bin', 'oxlint'),
-    ['--config', configFile, file], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath,
+    [join(root, 'node_modules', 'oxlint', 'bin', 'oxlint'), '--config', configFile, file],
+    { encoding: 'utf8' });
   if (result.error) throw result.error;
   const output = result.stdout + result.stderr;
   assert.doesNotMatch(output, /Failed to load|Error loading|panic/i);
