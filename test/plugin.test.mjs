@@ -78,6 +78,30 @@ test('ignores noncomponents and allowed root utilities', () => {
   assert.equal(result.status, 0, result.output);
 });
 
+test('keeps findings and root tracking separate across files', () => {
+  writeFileSync(config, JSON.stringify({
+    jsPlugins: plugin.recommended.jsPlugins,
+    rules: plugin.recommended.rules,
+  }));
+  const component = join(directory, 'a.tsx');
+  const plainTypeScript = join(directory, 'b.ts');
+  const nextComponent = join(directory, 'c.tsx');
+  writeFileSync(component, 'export function A() { return <div className="w-full" />; }\n');
+  writeFileSync(plainTypeScript, 'export const value = 1;\n');
+  writeFileSync(nextComponent, 'export function C() { return <div className="m-2" />; }\n');
+
+  const result = spawnSync(process.execPath, [
+    join(root, 'node_modules', 'oxlint', 'bin', 'oxlint'),
+    '--config', config, '--threads', '1', component, plainTypeScript, nextComponent,
+  ], { encoding: 'utf8' });
+  if (result.error) throw result.error;
+  const output = result.stdout + result.stderr;
+  assert.equal(result.status, 1, output);
+  assert.equal([...output.matchAll(/React component root must not set 'w-full'/g)].length, 1, output);
+  assert.equal([...output.matchAll(/React component root must not set 'm-2'/g)].length, 1, output);
+  assert.doesNotMatch(output, /b\.ts:\d+:\d+:.*tw-no-self-positioning/, output);
+});
+
 test('BEM positioning includes relative positioning and floats', () => {
   const result = lint(`
     function Card() {
