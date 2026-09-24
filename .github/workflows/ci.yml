@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: cargo fmt -- --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-apple-darwin
+            host: macos-15-intel
+            suffix: darwin-x64
+          - target: aarch64-apple-darwin
+            host: macos-latest
+            suffix: darwin-arm64
+          - target: x86_64-pc-windows-msvc
+            host: windows-latest
+            suffix: win32-x64-msvc
+          - target: aarch64-pc-windows-msvc
+            host: windows-11-arm
+            suffix: win32-arm64-msvc
+          - target: x86_64-unknown-linux-gnu
+            host: ubuntu-latest
+            suffix: linux-x64-gnu
+          - target: aarch64-unknown-linux-gnu
+            host: ubuntu-24.04-arm
+            suffix: linux-arm64-gnu
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-latest
+            suffix: linux-x64-musl
+            musl: true
+          - target: aarch64-unknown-linux-musl
+            host: ubuntu-24.04-arm
+            suffix: linux-arm64-musl
+            musl: true
+    runs-on: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: mlugg/setup-zig@v2
+        if: matrix.musl == true
+      - uses: taiki-e/install-action@v2
+        if: matrix.musl == true
+        with:
+          tool: cargo-zigbuild
+      - run: npm ci
+      - name: Build native addon
+        if: matrix.musl != true
+        run: npm run build -- --target ${{ matrix.target }}
+        shell: bash
+      - name: Build musl addon
+        if: matrix.musl == true
+        run: npm run build -- --target ${{ matrix.target }} -x
+        shell: bash
+      - name: Test native addon
+        if: matrix.musl != true
+        run: npm test
+      - name: Test musl addon on Alpine
+        if: matrix.musl == true
+        run: docker run --rm -v "$PWD:/work" -w /work node:24-alpine sh -lc 'npm ci && npm test'
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binding-${{ matrix.suffix }}
+          path: self-positioning.${{ matrix.suffix }}.node
+          if-no-files-found: error
