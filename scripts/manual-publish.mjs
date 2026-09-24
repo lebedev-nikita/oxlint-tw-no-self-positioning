@@ -14,7 +14,10 @@ const suffixes = [
 ];
 
 if (!existsSync('artifacts')) throw new Error('Native artifacts are missing. Run just fetch-artifacts.');
-if (!prepareOnly) execFileSync(npm, ['whoami'], { stdio: 'inherit' });
+// OIDC credentials are acquired only by npm publish, so whoami cannot test them in CI.
+if (!prepareOnly && !process.env.GITHUB_ACTIONS) {
+  execFileSync(npm, ['whoami'], { stdio: 'inherit' });
+}
 
 const stage = mkdtempSync(join(tmpdir(), 'oxlint-manual-publish-'));
 let success = false;

@@ -86,14 +86,28 @@ For a full local check, run `just check`. `just install`, `just build`, `just li
 
 The Rust matcher is exposed through Node-API. Oxlint's external plugin API requires a small JavaScript adapter for AST access and diagnostics. The adapter shares collected candidates and one native scan across active rules for each source file. There is no separate Rust plugin ABI in Oxlint's external plugin API ([Oxlint documentation](https://oxc.rs/docs/guide/usage/linter/js-plugins)).
 
-The GitHub Actions workflow builds macOS, Windows, and Linux (glibc/musl) packages for x64 and arm64 and uploads the native binaries. Publishing is manual. Install [`just`](https://just.systems/) and the [GitHub CLI](https://cli.github.com/), log in to GitHub and npm, and update `package.json`, `package-lock.json`, `Cargo.toml`, and `Cargo.lock` to the same version. Commit the release, push a matching `vX.Y.Z` tag to `origin`, and wait for its CI run to succeed. Then, from that clean tagged commit, run:
+The GitHub Actions workflow builds macOS, Windows, and Linux (glibc/musl) packages for x64 and arm64. On version tags it publishes the eight platform packages and then the root package through [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/). The `publish` job starts only when the repository variable `NPM_PUBLISH_ENABLED` is `true`; it waits for every build and test job to succeed. The workflow needs no npm token.
+
+For the first release, the packages must exist before npm can authorize the workflow. Install [`just`](https://just.systems/) and the [GitHub CLI](https://cli.github.com/), log in to GitHub and npm, update `package.json`, `package-lock.json`, `Cargo.toml`, and `Cargo.lock` to the same version, and push a matching `vX.Y.Z` tag. Wait for CI to succeed, then run from that clean tagged commit:
 
 ```sh
 just prepare  # Optional: download artifacts and check the assembled packages.
 just publish
 ```
 
-`just publish` installs dependencies, builds and tests the local native addon, runs lint and type checks, downloads the eight binaries from the successful CI run for the tagged commit, prepares the platform packages in a temporary directory, and publishes those packages before the root package. npm may request 2FA for each package. A failed publish leaves the temporary staging directory for inspection. No package is published by GitHub Actions.
+`just publish` installs dependencies, builds and tests the local native addon, runs lint and type checks, downloads the eight binaries from CI, and publishes the platform packages before the root package. npm may request 2FA. A failed publish leaves the temporary staging directory for inspection.
+
+After all nine packages exist, authorize `ci.yml` as a trusted publisher for each one (with direct `npm publish` allowed), then enable automated publication:
+
+```sh
+for suffix in darwin-x64 darwin-arm64 win32-x64-msvc win32-arm64-msvc linux-x64-gnu linux-arm64-gnu linux-x64-musl linux-arm64-musl; do
+  npm trust github "oxlint-tw-no-self-positioning-$suffix" --repo lebedev-nikita/oxlint-tw-no-self-positioning --file ci.yml --allow-publish --yes
+done
+npm trust github oxlint-tw-no-self-positioning --repo lebedev-nikita/oxlint-tw-no-self-positioning --file ci.yml --allow-publish --yes
+gh variable set NPM_PUBLISH_ENABLED --body true
+```
+
+For subsequent releases, commit the synchronized version files and push the matching tag. CI assembles and publishes the packages. `just publish` remains available for recovery from a failed release.
 
 ## License
 

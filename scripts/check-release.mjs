@@ -6,8 +6,9 @@ const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
 const cargo = readFileSync('Cargo.toml', 'utf8');
 const cargoLock = readFileSync('Cargo.lock', 'utf8');
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const ci = process.argv.includes('--ci');
 
-if (git('status', '--porcelain')) {
+if (!ci && git('status', '--porcelain')) {
   throw new Error('Commit all changes before publishing.');
 }
 
@@ -19,14 +20,20 @@ if (lock.version !== version || lock.packages[''].version !== version
 }
 
 const expectedTag = `v${version}`;
-const tags = git('tag', '--points-at', 'HEAD').split('\n');
-if (!tags.includes(expectedTag)) {
-  throw new Error(`Tag the current commit with ${expectedTag} before publishing.`);
-}
-const remoteTags = git('ls-remote', '--tags', 'origin',
-  `refs/tags/${expectedTag}`, `refs/tags/${expectedTag}^{}`);
-if (!remoteTags.split('\n').some(line => line.startsWith(`${git('rev-parse', 'HEAD')}\t`))) {
-  throw new Error(`Push ${expectedTag} to origin and wait for CI before publishing.`);
+if (ci) {
+  if (process.env.GITHUB_REF !== `refs/tags/${expectedTag}`) {
+    throw new Error(`CI must run on refs/tags/${expectedTag}.`);
+  }
+} else {
+  const tags = git('tag', '--points-at', 'HEAD').split('\n');
+  if (!tags.includes(expectedTag)) {
+    throw new Error(`Tag the current commit with ${expectedTag} before publishing.`);
+  }
+  const remoteTags = git('ls-remote', '--tags', 'origin',
+    `refs/tags/${expectedTag}`, `refs/tags/${expectedTag}^{}`);
+  if (!remoteTags.split('\n').some(line => line.startsWith(`${git('rev-parse', 'HEAD')}\t`))) {
+    throw new Error(`Push ${expectedTag} to origin and wait for CI before publishing.`);
+  }
 }
 
 console.log(`Release ${expectedTag} matches clean commit ${git('rev-parse', '--short', 'HEAD')}.`);

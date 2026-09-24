@@ -96,3 +96,27 @@ jobs:
           name: binding-${{ matrix.suffix }}
           path: self-positioning.${{ matrix.suffix }}.node
           if-no-files-found: error
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v') && vars.NPM_PUBLISH_ENABLED == 'true'
+    needs: [rust, native]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm install --global npm@^11.15.0
+      - run: npm ci
+      - run: npm run build:plugin
+      - run: node scripts/check-release.mjs --ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binding-*
+          path: artifacts
+      - run: node scripts/manual-publish.mjs
