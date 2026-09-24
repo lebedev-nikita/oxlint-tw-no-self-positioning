@@ -202,7 +202,7 @@ function createRule(group: number, description: string): Rule {
       },
     },
     createOnce(context: Context) {
-      let state: FileState = { candidates: [], nodes: [], seenRoots: new Set(), findings: null };
+      let state: FileState;
       let ownsCollection = false;
 
       function add(kind: Candidate['kind'], text: string, node: AstNode): void {
@@ -243,7 +243,9 @@ function createRule(group: number, description: string): Rule {
           const existing = fileStates.get(node);
           if (existing) {
             state = existing;
+            ownsCollection = false;
           } else {
+            state = { candidates: [], nodes: [], seenRoots: new Set(), findings: null };
             fileStates.set(node, state);
             ownsCollection = true;
           }
@@ -259,7 +261,10 @@ function createRule(group: number, description: string): Rule {
             visitReturned(node.body, inspectRoot);
           }
         },
-        'Program:exit'() {
+        'Program:exit'(node) {
+          // Oxlint can reuse Program nodes for later files. Rule closures keep the
+          // shared state for this file even after its WeakMap entry is removed.
+          fileStates.delete(node);
           if (state.candidates.length === 0) return;
           state.findings ??= scan(state.candidates);
           for (const finding of state.findings) {
