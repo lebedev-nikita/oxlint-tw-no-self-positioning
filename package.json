@@ -61,8 +61,7 @@
     "test": "node --test test/*.test.mjs",
     "test:rust": "cargo test",
     "create:npm-dirs": "napi create-npm-dirs",
-    "artifacts": "napi artifacts",
-    "prepublishOnly": "npm run build:plugin && napi prepublish -t npm --no-gh-release"
+    "artifacts": "napi artifacts"
   },
   "dependencies": {
     "@oxlint/plugins": "^1.85.0"

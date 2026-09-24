@@ -96,35 +96,3 @@ jobs:
           name: binding-${{ matrix.suffix }}
           path: self-positioning.${{ matrix.suffix }}.node
           if-no-files-found: error
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [rust, native]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          registry-url: https://registry.npmjs.org
-      - run: npm install --global npm@^11.15.0
-      - run: npm ci
-      - run: npm run build:plugin
-      - name: Verify tag and package version
-        run: node -e "if (process.env.GITHUB_REF_NAME !== 'v' + require('./package.json').version) process.exit(1)"
-      - run: npm run create:npm-dirs
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: binding-*
-          path: artifacts
-      - run: npm run artifacts
-      - run: node scripts/verify-artifacts.mjs
-      - run: npm pack --dry-run --ignore-scripts
-      - name: Publish native packages and root package
-        run: npm publish --access public --provenance
-        env:
-          NPM_CONFIG_PROVENANCE: 'true'
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

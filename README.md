@@ -82,9 +82,18 @@ cargo test
 npm pack --dry-run
 ```
 
+For a full local check, run `just check`. `just install`, `just build`, `just lint`, and `just test` are also available separately.
+
 The Rust matcher is exposed through Node-API. Oxlint's external plugin API requires a small JavaScript adapter for AST access and diagnostics. The adapter shares collected candidates and one native scan across active rules for each source file. There is no separate Rust plugin ABI in Oxlint's external plugin API ([Oxlint documentation](https://oxc.rs/docs/guide/usage/linter/js-plugins)).
 
-The GitHub Actions workflow builds macOS, Windows, and Linux (glibc/musl) packages for x64 and arm64, tests each native binding, assembles the optional platform packages, and publishes from a `v*` tag. For the first release, configure an `NPM_TOKEN` repository secret with publish access to the root and eight platform package names. Once these packages exist, configure `ci.yml` as a trusted publisher for all nine packages in npm and remove the token if desired. Update `package.json`, `package-lock.json`, `Cargo.toml`, and `Cargo.lock` to the same version, then push a matching `vX.Y.Z` tag. The release workflow publishes the platform packages at the root package's version.
+The GitHub Actions workflow builds macOS, Windows, and Linux (glibc/musl) packages for x64 and arm64 and uploads the native binaries. Publishing is manual. Install [`just`](https://just.systems/) and the [GitHub CLI](https://cli.github.com/), log in to GitHub and npm, and update `package.json`, `package-lock.json`, `Cargo.toml`, and `Cargo.lock` to the same version. Commit the release, push a matching `vX.Y.Z` tag to `origin`, and wait for its CI run to succeed. Then, from that clean tagged commit, run:
+
+```sh
+just prepare  # Optional: download artifacts and check the assembled packages.
+just publish
+```
+
+`just publish` installs dependencies, builds and tests the local native addon, runs lint and type checks, downloads the eight binaries from the successful CI run for the tagged commit, prepares the platform packages in a temporary directory, and publishes those packages before the root package. npm may request 2FA for each package. A failed publish leaves the temporary staging directory for inspection. No package is published by GitHub Actions.
 
 ## License
 
