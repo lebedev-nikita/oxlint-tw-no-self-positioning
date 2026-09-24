@@ -1,4 +1,4 @@
-# Local checks and manual release commands.
+# Local checks and a manual first-release or recovery path.
 default:
   @just --list
 
