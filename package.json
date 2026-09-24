@@ -1,0 +1,76 @@
+{
+  "name": "oxlint-tw-no-self-positioning",
+  "version": "0.1.0",
+  "description": "Oxlint rule preventing React component roots from setting their own placement and width",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lebedev-nikita/oxlint-tw-no-self-positioning.git"
+  },
+  "keywords": [
+    "oxlint",
+    "tailwindcss",
+    "react",
+    "lint",
+    "rust",
+    "napi"
+  ],
+  "main": "./dist/plugin.mjs",
+  "types": "./dist/plugin.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/plugin.d.mts",
+      "default": "./dist/plugin.mjs"
+    }
+  },
+  "files": [
+    "dist/plugin.mjs",
+    "dist/plugin.d.mts",
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE",
+    "docs/bem-external-geometry.md"
+  ],
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "napi": {
+    "binaryName": "self-positioning",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-musl"
+    ]
+  },
+  "scripts": {
+    "build": "npm run build:plugin && napi build --release --platform",
+    "build:debug": "npm run build:plugin && napi build --platform",
+    "build:plugin": "tsc --project tsconfig.plugin.json",
+    "typecheck": "tsc --project tsconfig.plugin.json --noEmit && npm run build:plugin && tsc --project tsconfig.consumer.json",
+    "lint": "oxlint src/plugin.mts test scripts",
+    "pretest": "npm run build:plugin",
+    "test": "node --test test/*.test.mjs",
+    "test:rust": "cargo test",
+    "create:npm-dirs": "napi create-npm-dirs",
+    "artifacts": "napi artifacts",
+    "prepublishOnly": "npm run build:plugin && napi prepublish -t npm --no-gh-release"
+  },
+  "dependencies": {
+    "@oxlint/plugins": "^1.85.0"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.10.5",
+    "@types/node": "^24.13.6",
+    "oxlint": "^1.85.0",
+    "typescript": "^6.0.3"
+  }
+}
