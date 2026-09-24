@@ -286,7 +286,7 @@ function createRule(group: number, description: string): Rule {
 // Numeric group IDs match the constants in src/lib.rs.
 const rules = {
   'no-margin': createRule(0, 'Disallow margins on a React component root'),
-  'no-position': createRule(1, 'Disallow non-static positioning on a React component root'),
+  'no-position': createRule(1, 'Disallow external positioning on a React component root'),
   'no-offset': createRule(2, 'Disallow positioning offsets on a React component root'),
   'no-float': createRule(3, 'Disallow floats on a React component root'),
   'no-width': createRule(4, 'Disallow width on a React component root'),

@@ -28,7 +28,7 @@ Remove the `rules` override to enable all groups. VS Code can auto-import the na
 | Rule | Disallowed root styles |
 | --- | --- |
 | `no-margin` | Margin, including directional and logical variants |
-| `no-position` | `position` values other than `static` |
+| `no-position` | `absolute`, `fixed`, `sticky`, and other values except `static` and `relative` |
 | `no-offset` | `top`, `right`, `bottom`, `left`, logical offsets, and `inset` |
 | `no-float` | `float` values other than `none` |
 | `no-width` | `width` and Tailwind `size-*` (also sets width) |
@@ -54,18 +54,20 @@ function Card() {
 
 // Valid: the parent controls placement; max-width is allowed.
 function Card() {
-  return <article className="max-w-lg min-w-0 p-4" />;
+  return <article className="relative max-w-lg min-w-0 p-4">
+    <span className="absolute inset-y-0 left-0" />
+  </article>;
 }
 function Page() {
   return <div className="mt-4 w-80"><Card /></div>;
 }
 ```
 
-The rules catch `m-*`, `mx-*`, `my-*`, directional margin utilities (including logical directions and negative values), `relative`/`absolute`/`fixed`/`sticky`, floating utilities such as `float-left`, `top-*`/`right-*`/`bottom-*`/`left-*`, `inset-*`/`start-*`/`end-*`, `w-*`, `size-*`, `basis-*`, and Tailwind `flex-*` shorthand values that set flex basis. Variants such as `md:`, `hover:`, `!`, and arbitrary properties such as `[margin-top:1rem]` are recognized. Utilities targeting pseudo-elements or children (for example, `before:absolute`, `*:w-full`, and `[&_svg]:size-3`) are ignored. Arbitrary variants that still target the root, such as `[&:hover]:w-full`, are checked. `static` and `float-none` are allowed because they reset positioning and floating. `max-w-*` and `min-w-*` are allowed.
+The rules catch `m-*`, `mx-*`, `my-*`, directional margin utilities (including logical directions and negative values), `absolute`/`fixed`/`sticky`, floating utilities such as `float-left`, `top-*`/`right-*`/`bottom-*`/`left-*`, `inset-*`/`start-*`/`end-*`, `w-*`, `size-*`, `basis-*`, and Tailwind `flex-*` shorthand values that set flex basis. Variants such as `md:`, `hover:`, `!`, and arbitrary properties such as `[margin-top:1rem]` are recognized. Utilities targeting pseudo-elements or children (for example, `before:absolute`, `*:w-full`, and `[&_svg]:size-3`) are ignored. Arbitrary variants that still target the root, such as `[&:hover]:w-full`, are checked. `static`, `relative` (including variants and `[position:relative]`), and `float-none` are allowed. `relative` can establish a containing block for the component's own positioned children without taking the root out of normal flow; offsets on that root, such as `top-2`, still trigger `no-offset`. `max-w-*` and `min-w-*` are allowed.
 
-For inline `style`, corresponding margin, offset, width, and flex-basis properties are flagged. `position` values other than `static` and `float` values other than `none` are flagged when statically known. `maxWidth` and `minWidth` are allowed.
+For inline `style`, corresponding margin, offset, width, and flex-basis properties are flagged. `position` values other than `static` and `relative`, and `float` values other than `none`, are flagged when statically known. `maxWidth` and `minWidth` are allowed.
 
-The [BEM CSS methodology](https://bem.info/en/methodology/css/#external-geometry-and-positioning) puts external geometry and positioning on the parent block and explicitly shows `margin` and `position: relative`. Its [FAQ](https://bem.info/en/methodology/faq/#why-is-external-geometry-and-positioning-set-via-the-parent-block) names `margin` and `position`; a [BEM team member's answer](https://github.com/bem-site/bem-forum-content-ru/issues/1170#issuecomment-255318283) also names `float`. The restriction on ordinary `width` and flex basis is this package's additional policy; BEM does not supply an exhaustive list of forbidden CSS properties. See [the source notes](docs/bem-external-geometry.md) for the boundary between documented guidance and this rule's choices.
+The [BEM CSS methodology](https://bem.info/en/methodology/css/#external-geometry-and-positioning) puts external geometry and positioning on the parent block and explicitly shows `margin` and `position: relative`. Its [FAQ](https://bem.info/en/methodology/faq/#why-is-external-geometry-and-positioning-set-via-the-parent-block) names `margin` and `position`; a [BEM team member's answer](https://github.com/bem-site/bem-forum-content-ru/issues/1170#issuecomment-255318283) also names `float`. This package permits `relative` on a component root because it can serve internal layout; BEM's example uses it for external placement. The restriction on ordinary `width` and flex basis is this package's additional policy; BEM does not supply an exhaustive list of forbidden CSS properties. See [the source notes](docs/bem-external-geometry.md) for the boundary between documented guidance and this rule's choices.
 
 Supported component forms include named functions, uppercase arrow/function expressions, `memo`/`forwardRef` wrappers, class `render()` methods, conditional returns, fragments, and returned arrays. Static strings in `className`, template literals, and common `clsx`/`cn`/`classNames` calls are inspected. Dynamic values, CSS-in-JS, imported styles, CSS modules, and classes defined elsewhere cannot be resolved by these rules. They deliberately report a utility even if another class may override it at runtime.
 

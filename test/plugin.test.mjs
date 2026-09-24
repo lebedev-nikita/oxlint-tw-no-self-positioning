@@ -119,7 +119,30 @@ test('keeps findings and root tracking separate across files', () => {
   assert.doesNotMatch(output, /b\.ts:\d+:\d+:.*tw-no-self-positioning/, output);
 });
 
-test('BEM positioning includes relative positioning and floats', () => {
+test('allows relative roots as internal containing blocks while rejecting placement and offsets', () => {
+  const card = lint(`
+    function Card() {
+      return <article className="relative overflow-hidden rounded-lg">
+        <span className="absolute inset-y-0 left-0 w-1 bg-accent" />
+        <div>Content</div>
+      </article>;
+    }
+  `);
+  assert.deepEqual(card.messages, [], card.output);
+  assert.equal(card.status, 0, card.output);
+
+  const result = lint(`
+    function Card() {
+      return <article className="relative md:relative hover:!relative [position:relative] absolute fixed md:fixed sticky top-2 left-0"
+        style={{ position: 'relative', top: 2 }} />;
+    }
+  `);
+  assert.deepEqual(result.messages.sort(), [
+    'absolute', 'fixed', 'md:fixed', 'sticky', 'top-2', 'left-0', 'top:2',
+  ].sort(), result.output);
+});
+
+test('reports external positioning and floats', () => {
   const result = lint(`
     function Card() {
       return <article className="relative md:sticky float-left float-end border p-4 h-20"
@@ -127,7 +150,7 @@ test('BEM positioning includes relative positioning and floats', () => {
     }
   `);
   assert.deepEqual(result.messages.sort(), [
-    'relative', 'md:sticky', 'float-left', 'float-end', 'position:fixed', 'cssFloat:inline-start',
+    'md:sticky', 'float-left', 'float-end', 'position:fixed', 'cssFloat:inline-start',
   ].sort(), result.output);
 });
 
@@ -147,7 +170,7 @@ test('each property group can be disabled independently', () => {
   `;
   const groups = [
     ['no-margin', ['m-2', 'marginLeft:2']],
-    ['no-position', ['relative', 'position:absolute']],
+    ['no-position', ['position:absolute']],
     ['no-offset', ['top-0', 'left:0']],
     ['no-float', ['float-left', 'cssFloat:right']],
     ['no-width', ['w-80', 'width:80']],
