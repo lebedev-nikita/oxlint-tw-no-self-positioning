@@ -61,7 +61,7 @@ function Page() {
 }
 ```
 
-The rules catch `m-*`, `mx-*`, `my-*`, directional margin utilities (including logical directions and negative values), `relative`/`absolute`/`fixed`/`sticky`, floating utilities such as `float-left`, `top-*`/`right-*`/`bottom-*`/`left-*`, `inset-*`/`start-*`/`end-*`, `w-*`, `size-*`, `basis-*`, and Tailwind `flex-*` shorthand values that set flex basis. Variants such as `md:`, `hover:`, `!`, and arbitrary properties such as `[margin-top:1rem]` are recognized. Utilities targeting pseudo-elements or children (for example, `before:absolute` and `*:w-full`) are ignored. `static` and `float-none` are allowed because they reset positioning and floating. `max-w-*` and `min-w-*` are allowed.
+The rules catch `m-*`, `mx-*`, `my-*`, directional margin utilities (including logical directions and negative values), `relative`/`absolute`/`fixed`/`sticky`, floating utilities such as `float-left`, `top-*`/`right-*`/`bottom-*`/`left-*`, `inset-*`/`start-*`/`end-*`, `w-*`, `size-*`, `basis-*`, and Tailwind `flex-*` shorthand values that set flex basis. Variants such as `md:`, `hover:`, `!`, and arbitrary properties such as `[margin-top:1rem]` are recognized. Utilities targeting pseudo-elements or children (for example, `before:absolute`, `*:w-full`, and `[&_svg]:size-3`) are ignored. Arbitrary variants that still target the root, such as `[&:hover]:w-full`, are checked. `static` and `float-none` are allowed because they reset positioning and floating. `max-w-*` and `min-w-*` are allowed.
 
 For inline `style`, corresponding margin, offset, width, and flex-basis properties are flagged. `position` values other than `static` and `float` values other than `none` are flagged when statically known. `maxWidth` and `minWidth` are allowed.
 

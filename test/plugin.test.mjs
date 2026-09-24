@@ -78,6 +78,23 @@ test('ignores noncomponents and allowed root utilities', () => {
   assert.equal(result.status, 0, result.output);
 });
 
+test('ignores arbitrary variants targeting descendants of the root', () => {
+  const reported = lint(`
+    export function Kbd() {
+      return <kbd className="[&_svg:not([class*='size-'])]:size-3 [&>svg]:w-4 hover:[&_span]:mt-2 [&:hover]:w-8">A</kbd>;
+    }
+  `);
+  assert.deepEqual(reported.messages, ['[&:hover]:w-8'], reported.output);
+
+  const original = lint(`
+    export function Kbd() {
+      return <kbd className="[&_svg:not([class*='size-'])]:size-3">A</kbd>;
+    }
+  `);
+  assert.equal(original.status, 0, original.output);
+  assert.deepEqual(original.messages, [], original.output);
+});
+
 test('keeps findings and root tracking separate across files', () => {
   writeFileSync(config, JSON.stringify({
     jsPlugins: plugin.recommended.jsPlugins,
