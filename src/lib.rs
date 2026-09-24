@@ -20,7 +20,7 @@ const MARGIN: u32 = 0;
 const POSITION: u32 = 1;
 const OFFSET: u32 = 2;
 const FLOAT: u32 = 3;
-const WIDTH: u32 = 4;
+const DIMENSIONS: u32 = 4;
 const FLEX_BASIS: u32 = 5;
 
 #[napi]
@@ -109,11 +109,11 @@ fn class_group(token: &str) -> Option<u32> {
     {
         return Some(FLOAT);
     }
-    if ["w-", "size-"]
+    if ["w-", "h-", "size-"]
         .iter()
         .any(|prefix| base.starts_with(prefix))
     {
-        return Some(WIDTH);
+        return Some(DIMENSIONS);
     }
     if base.starts_with("basis-") {
         return Some(FLEX_BASIS);
@@ -234,7 +234,7 @@ fn property_group(text: &str) -> Option<u32> {
         return Some(OFFSET);
     }
     match property.as_str() {
-        "width" => Some(WIDTH),
+        "width" | "height" => Some(DIMENSIONS),
         "flexbasis" | "flex" => Some(FLEX_BASIS),
         _ => None,
     }
@@ -262,12 +262,14 @@ mod tests {
             "inset-x-0",
             "start-1",
             "w-full",
+            "h-20",
             "size-4",
             "basis-1/2",
             "flex-1",
             "flex-[2_2_0%]",
             "[margin-top:1px]",
             "hover:[width:50%]",
+            "md:[height:20px]",
             "[position:absolute]",
             "[float:left]",
             "[inset-inline-start:0]",
@@ -281,6 +283,8 @@ mod tests {
         for class in [
             "max-w-md",
             "min-w-0",
+            "max-h-screen",
+            "min-h-0",
             "static",
             "float-none",
             "clearfix",
@@ -332,6 +336,7 @@ mod tests {
             "marginTop:0",
             "margin-inline:1px",
             "width:20",
+            "height:20",
             "flexBasis:0",
             "flex:1",
             "left:0",
@@ -347,6 +352,8 @@ mod tests {
         for property in [
             "maxWidth:20",
             "min-width:0",
+            "maxHeight:20",
+            "min-height:0",
             "position:static",
             "position:relative",
             "position: Relative ",
@@ -365,7 +372,9 @@ mod tests {
             ("absolute", POSITION),
             ("left-0", OFFSET),
             ("float-left", FLOAT),
-            ("w-80", WIDTH),
+            ("w-80", DIMENSIONS),
+            ("h-20", DIMENSIONS),
+            ("size-4", DIMENSIONS),
             ("basis-1/2", FLEX_BASIS),
             ("flex-1", FLEX_BASIS),
             ("[margin-top:1px]", MARGIN),
@@ -378,7 +387,8 @@ mod tests {
             ("position:absolute", POSITION),
             ("insetInlineStart:0", OFFSET),
             ("cssFloat:left", FLOAT),
-            ("width:80", WIDTH),
+            ("width:80", DIMENSIONS),
+            ("height:20", DIMENSIONS),
             ("flexBasis:0", FLEX_BASIS),
             ("flex:1", FLEX_BASIS),
         ] {

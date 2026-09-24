@@ -33,18 +33,18 @@ function lint(source, rules = plugin.recommended.rules, configFile = config) {
   };
 }
 
-test('checks root class and style, while allowing min/max width and descendants', () => {
+test('checks root dimensions in class and style, while allowing min/max constraints and descendants', () => {
   const result = lint(`
     function Card() {
-      return <article className="md:-mx-2 absolute top-0 w-80 basis-1/2 max-w-lg min-w-0 p-4"
-        style={{ marginTop: 4, position: 'absolute', width: 200, maxWidth: 500, minWidth: 0 }}>
-        <span className="mt-4 w-full" />
+      return <article className="md:-mx-2 absolute top-0 w-80 h-20 size-4 md:h-24 basis-1/2 max-w-lg min-w-0 max-h-screen min-h-0 p-4"
+        style={{ marginTop: 4, position: 'absolute', width: 200, height: 20, maxWidth: 500, minWidth: 0, maxHeight: 100, minHeight: 0 }}>
+        <span className="mt-4 w-full h-full" />
       </article>;
     }
   `);
   assert.deepEqual(result.messages.sort(), [
-    'md:-mx-2', 'absolute', 'top-0', 'w-80', 'basis-1/2',
-    'marginTop:4', 'position:absolute', 'width:200',
+    'md:-mx-2', 'absolute', 'top-0', 'w-80', 'h-20', 'size-4', 'md:h-24', 'basis-1/2',
+    'marginTop:4', 'position:absolute', 'width:200', 'height:20',
   ].sort(), result.output);
   assert.equal(result.status, 1);
 });
@@ -72,7 +72,7 @@ test('reads static strings in class helpers and template literals', () => {
 test('ignores noncomponents and allowed root utilities', () => {
   const result = lint(`
     function helper() { return <div className="m-4" />; }
-    function Card() { return <div className="max-w-sm min-w-0 static float-none flex flex-row p-4 before:absolute *:w-full" style={{ maxWidth: 10, position: 'static', cssFloat: 'none' }} />; }
+    function Card() { return <div className="max-w-sm min-w-0 max-h-screen min-h-0 static float-none flex flex-row p-4 before:absolute *:w-full *:h-full" style={{ maxWidth: 10, minHeight: 0, position: 'static', cssFloat: 'none' }} />; }
   `);
   assert.deepEqual(result.messages, [], result.output);
   assert.equal(result.status, 0, result.output);
@@ -142,7 +142,7 @@ test('allows relative roots as internal containing blocks while rejecting placem
   ].sort(), result.output);
 });
 
-test('reports external positioning and floats', () => {
+test('reports external positioning, floats, and dimensions', () => {
   const result = lint(`
     function Card() {
       return <article className="relative md:sticky float-left float-end border p-4 h-20"
@@ -150,7 +150,7 @@ test('reports external positioning and floats', () => {
     }
   `);
   assert.deepEqual(result.messages.sort(), [
-    'md:sticky', 'float-left', 'float-end', 'position:fixed', 'cssFloat:inline-start',
+    'md:sticky', 'float-left', 'float-end', 'h-20', 'position:fixed', 'cssFloat:inline-start', 'height:20',
   ].sort(), result.output);
 });
 
@@ -165,15 +165,15 @@ test('treats Fragment children and returned arrays as roots', () => {
 
 test('each property group can be disabled independently', () => {
   const source = `
-    const Card = () => <div className="m-2 relative top-0 float-left w-80 basis-1/2"
-      style={{ marginLeft: 2, position: 'absolute', left: 0, cssFloat: 'right', width: 80, flexBasis: 20 }} />;
+    const Card = () => <div className="m-2 relative top-0 float-left w-80 h-20 size-4 basis-1/2"
+      style={{ marginLeft: 2, position: 'absolute', left: 0, cssFloat: 'right', width: 80, height: 20, flexBasis: 20 }} />;
   `;
   const groups = [
     ['no-margin', ['m-2', 'marginLeft:2']],
     ['no-position', ['position:absolute']],
     ['no-offset', ['top-0', 'left:0']],
     ['no-float', ['float-left', 'cssFloat:right']],
-    ['no-width', ['w-80', 'width:80']],
+    ['no-dimensions', ['w-80', 'h-20', 'size-4', 'width:80', 'height:20']],
     ['no-flex-basis', ['basis-1/2', 'flexBasis:20']],
   ];
   const all = groups.flatMap(([, messages]) => messages);
@@ -206,7 +206,7 @@ test('recommended includes every rule and works in oxlint config extends', () =>
     import { noSelfPositioning } from 'oxlint-tw-no-self-positioning';
     export default defineConfig({
       extends: [noSelfPositioning.recommended],
-      rules: { 'tw-no-self-positioning/no-width': 'off' },
+      rules: { 'tw-no-self-positioning/no-dimensions': 'off' },
     });
   `);
   const overridden = lint('const Card = () => <div className="m-2 w-80" />;', undefined, tsConfig);

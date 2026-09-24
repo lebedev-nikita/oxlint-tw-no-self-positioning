@@ -1,7 +1,7 @@
 {
   "name": "oxlint-tw-no-self-positioning",
-  "version": "0.1.4",
-  "description": "Oxlint rule preventing React component roots from setting their own placement and width",
+  "version": "0.1.5",
+  "description": "Oxlint rules preventing React component roots from setting their own placement and dimensions",
   "license": "MIT",
   "repository": {
     "type": "git",

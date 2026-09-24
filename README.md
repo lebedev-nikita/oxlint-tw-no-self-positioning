@@ -1,6 +1,6 @@
 # oxlint-tw-no-self-positioning
 
-Oxlint rules that keep layout decisions at the call site of a React component. They check the outermost JSX element returned by a component for Tailwind utilities and inline `style` properties that set margin, positioning, floats, offsets, width, or flex basis.
+Oxlint rules that keep layout decisions at the call site of a React component. They check the outermost JSX element returned by a component for Tailwind utilities and inline `style` properties that set margin, positioning, floats, offsets, width, height, or flex basis.
 
 ## Install
 
@@ -31,7 +31,7 @@ Remove the `rules` override to enable all groups. VS Code can auto-import the na
 | `no-position` | `absolute`, `fixed`, `sticky`, and other values except `static` and `relative` |
 | `no-offset` | `top`, `right`, `bottom`, `left`, logical offsets, and `inset` |
 | `no-float` | `float` values other than `none` |
-| `no-width` | `width` and Tailwind `size-*` (also sets width) |
+| `no-dimensions` | `width`, `height`, and Tailwind `size-*` |
 | `no-flex-basis` | `flex-basis` and `flex` shorthand values |
 
 To enable just selected groups in `.oxlintrc.json`, add the plugin under `jsPlugins` and name the desired rules:
@@ -41,15 +41,15 @@ To enable just selected groups in `.oxlintrc.json`, add the plugin under `jsPlug
   "jsPlugins": ["oxlint-tw-no-self-positioning"],
   "rules": {
     "tw-no-self-positioning/no-margin": "error",
-    "tw-no-self-positioning/no-width": "error"
+    "tw-no-self-positioning/no-dimensions": "error"
   }
 }
 ```
 
 ```tsx
-// Invalid: the component chooses its own placement and width.
+// Invalid: the component chooses its own placement and dimensions.
 function Card() {
-  return <article className="mt-4 absolute left-0 w-80 basis-1/2" />;
+  return <article className="mt-4 absolute left-0 w-80 h-20 basis-1/2" />;
 }
 
 // Valid: the parent controls placement; max-width is allowed.
@@ -63,11 +63,11 @@ function Page() {
 }
 ```
 
-The rules catch `m-*`, `mx-*`, `my-*`, directional margin utilities (including logical directions and negative values), `absolute`/`fixed`/`sticky`, floating utilities such as `float-left`, `top-*`/`right-*`/`bottom-*`/`left-*`, `inset-*`/`start-*`/`end-*`, `w-*`, `size-*`, `basis-*`, and Tailwind `flex-*` shorthand values that set flex basis. Variants such as `md:`, `hover:`, `!`, and arbitrary properties such as `[margin-top:1rem]` are recognized. Utilities targeting pseudo-elements or children (for example, `before:absolute`, `*:w-full`, and `[&_svg]:size-3`) are ignored. Arbitrary variants that still target the root, such as `[&:hover]:w-full`, are checked. `static`, `relative` (including variants and `[position:relative]`), and `float-none` are allowed. `relative` can establish a containing block for the component's own positioned children without taking the root out of normal flow; offsets on that root, such as `top-2`, still trigger `no-offset`. `max-w-*` and `min-w-*` are allowed.
+The rules catch `m-*`, `mx-*`, `my-*`, directional margin utilities (including logical directions and negative values), `absolute`/`fixed`/`sticky`, floating utilities such as `float-left`, `top-*`/`right-*`/`bottom-*`/`left-*`, `inset-*`/`start-*`/`end-*`, `w-*`, `h-*`, `size-*`, `basis-*`, and Tailwind `flex-*` shorthand values that set flex basis. Variants such as `md:`, `hover:`, `!`, and arbitrary properties such as `[margin-top:1rem]` are recognized. Utilities targeting pseudo-elements or children (for example, `before:absolute`, `*:w-full`, and `[&_svg]:size-3`) are ignored. Arbitrary variants that still target the root, such as `[&:hover]:w-full`, are checked. `static`, `relative` (including variants and `[position:relative]`), and `float-none` are allowed. `relative` can establish a containing block for the component's own positioned children without taking the root out of normal flow; offsets on that root, such as `top-2`, still trigger `no-offset`. `max-w-*`, `min-w-*`, `max-h-*`, and `min-h-*` are allowed.
 
-For inline `style`, corresponding margin, offset, width, and flex-basis properties are flagged. `position` values other than `static` and `relative`, and `float` values other than `none`, are flagged when statically known. `maxWidth` and `minWidth` are allowed.
+For inline `style`, corresponding margin, offset, width, height, and flex-basis properties are flagged. `position` values other than `static` and `relative`, and `float` values other than `none`, are flagged when statically known. `maxWidth`, `minWidth`, `maxHeight`, and `minHeight` are allowed.
 
-The [BEM CSS methodology](https://bem.info/en/methodology/css/#external-geometry-and-positioning) puts external geometry and positioning on the parent block and explicitly shows `margin` and `position: relative`. Its [FAQ](https://bem.info/en/methodology/faq/#why-is-external-geometry-and-positioning-set-via-the-parent-block) names `margin` and `position`; a [BEM team member's answer](https://github.com/bem-site/bem-forum-content-ru/issues/1170#issuecomment-255318283) also names `float`. This package permits `relative` on a component root because it can serve internal layout; BEM's example uses it for external placement. The restriction on ordinary `width` and flex basis is this package's additional policy; BEM does not supply an exhaustive list of forbidden CSS properties. See [the source notes](docs/bem-external-geometry.md) for the boundary between documented guidance and this rule's choices.
+The [BEM CSS methodology](https://bem.info/en/methodology/css/#external-geometry-and-positioning) puts external geometry and positioning on the parent block and explicitly shows `margin` and `position: relative`. Its [FAQ](https://bem.info/en/methodology/faq/#why-is-external-geometry-and-positioning-set-via-the-parent-block) names `margin` and `position`; a [BEM team member's answer](https://github.com/bem-site/bem-forum-content-ru/issues/1170#issuecomment-255318283) also names `float`. This package permits `relative` on a component root because it can serve internal layout; BEM's example uses it for external placement. The restriction on ordinary `width`, `height`, and flex basis is this package's additional policy; BEM does not supply an exhaustive list of forbidden CSS properties. See [the source notes](docs/bem-external-geometry.md) for the boundary between documented guidance and this rule's choices.
 
 Supported component forms include named functions, uppercase arrow/function expressions, `memo`/`forwardRef` wrappers, class `render()` methods, conditional returns, fragments, and returned arrays. Static strings in `className`, template literals, and common `clsx`/`cn`/`classNames` calls are inspected. Dynamic values, CSS-in-JS, imported styles, CSS modules, and classes defined elsewhere cannot be resolved by these rules. They deliberately report a utility even if another class may override it at runtime.
 

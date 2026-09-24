@@ -3,7 +3,7 @@ import defaultPlugin, { noSelfPositioning, recommended } from 'oxlint-tw-no-self
 
 defineConfig({
   extends: [noSelfPositioning.recommended, defaultPlugin.recommended, recommended],
-  rules: { 'tw-no-self-positioning/no-width': 'off' },
+  rules: { 'tw-no-self-positioning/no-dimensions': 'off' },
 });
 
 const rule: keyof typeof noSelfPositioning.recommended.rules = 'tw-no-self-positioning/no-margin';

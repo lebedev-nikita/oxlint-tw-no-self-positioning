@@ -289,7 +289,7 @@ const rules = {
   'no-position': createRule(1, 'Disallow external positioning on a React component root'),
   'no-offset': createRule(2, 'Disallow positioning offsets on a React component root'),
   'no-float': createRule(3, 'Disallow floats on a React component root'),
-  'no-width': createRule(4, 'Disallow width on a React component root'),
+  'no-dimensions': createRule(4, 'Disallow width and height on a React component root'),
   'no-flex-basis': createRule(5, 'Disallow flex basis on a React component root'),
 } satisfies Record<string, Rule>;
 
@@ -300,7 +300,7 @@ export const recommended = {
     'tw-no-self-positioning/no-position': 'error',
     'tw-no-self-positioning/no-offset': 'error',
     'tw-no-self-positioning/no-float': 'error',
-    'tw-no-self-positioning/no-width': 'error',
+    'tw-no-self-positioning/no-dimensions': 'error',
     'tw-no-self-positioning/no-flex-basis': 'error',
   } satisfies Record<`tw-no-self-positioning/${keyof typeof rules}`, 'error'>,
 } satisfies OxlintConfig;
