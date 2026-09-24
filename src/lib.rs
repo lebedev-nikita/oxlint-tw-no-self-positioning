@@ -81,7 +81,7 @@ fn class_group(token: &str) -> Option<u32> {
                         | "first-line"
                         | "*"
                         | "**"
-                );
+                ) || arbitrary_variant_targets_other_element(variant);
                 last_colon = Some(index);
                 segment_start = index + 1;
             }
@@ -143,6 +143,58 @@ fn class_group(token: &str) -> Option<u32> {
             || rest.as_bytes().first().is_some_and(u8::is_ascii_digit)
     })
     .map(|_| FLEX_BASIS)
+}
+
+fn arbitrary_variant_targets_other_element(variant: &str) -> bool {
+    let Some(selector) = variant.strip_prefix('[').and_then(|s| s.strip_suffix(']')) else {
+        return false;
+    };
+    let (mut square, mut round, mut quote, mut escaped, mut after_root) =
+        (0_u32, 0_u32, None, false, false);
+    let (mut branch_has_root, mut branch_targets_other) = (false, false);
+    for ch in selector.chars() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if ch == '\\' {
+            escaped = true;
+            continue;
+        }
+        if let Some(delimiter) = quote {
+            if ch == delimiter {
+                quote = None;
+            }
+            continue;
+        }
+        if ch == '\'' || ch == '"' {
+            quote = Some(ch);
+            continue;
+        }
+        match ch {
+            '[' => square += 1,
+            ']' => square = square.saturating_sub(1),
+            '(' => round += 1,
+            ')' => round = round.saturating_sub(1),
+            '&' if square == 0 && round == 0 => {
+                branch_has_root = true;
+                after_root = true;
+            }
+            '_' | '>' | '+' | '~' if after_root && square == 0 && round == 0 => {
+                branch_targets_other = true;
+            }
+            ',' if square == 0 && round == 0 => {
+                if !branch_has_root || !branch_targets_other {
+                    return false;
+                }
+                branch_has_root = false;
+                branch_targets_other = false;
+                after_root = false;
+            }
+            _ => {}
+        }
+    }
+    branch_has_root && branch_targets_other
 }
 
 fn property_group(text: &str) -> Option<u32> {
@@ -246,8 +298,27 @@ mod tests {
             "before:absolute",
             "md:after:mt-2",
             "*:w-full",
+            "[&_svg:not([class*='size-'])]:size-3",
+            "[&>svg]:w-4",
+            "hover:[&_span]:mt-2",
+            "[&_svg,&_span]:size-3",
         ] {
             assert!(class_group(class).is_none(), "{class}");
+        }
+    }
+
+    #[test]
+    fn keeps_arbitrary_variants_targeting_the_root() {
+        for class in [
+            "[&:hover]:w-8",
+            "[&:not(.compact)]:size-3",
+            "[.container_&]:mt-2",
+            "[&:has(svg)]:relative",
+            "[&:has(>svg)]:w-4",
+            "[&[data-name='a_b']]:w-4",
+            "[&_svg,&:hover]:w-4",
+        ] {
+            assert!(class_group(class).is_some(), "{class}");
         }
     }
 
